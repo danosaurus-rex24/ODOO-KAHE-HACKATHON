@@ -3,6 +3,8 @@ import React from 'react'
 interface ButtonProps {
   children: React.ReactNode
   onClick?: () => void
+  type?: 'button' | 'submit' | 'reset'
+  disabled?: boolean
   variant?: 'primary' | 'secondary' | 'outline'
   className?: string
 }
@@ -10,6 +12,8 @@ interface ButtonProps {
 const Button: React.FC<ButtonProps> = ({ 
   children, 
   onClick, 
+  type = 'button',
+  disabled = false,
   variant = 'primary',
   className = ''
 }) => {
@@ -23,8 +27,10 @@ const Button: React.FC<ButtonProps> = ({
 
   return (
     <button
+      type={type}
       onClick={onClick}
-      className={`${baseStyles} ${variants[variant]} ${className}`}
+      disabled={disabled}
+      className={`${baseStyles} ${variants[variant]} ${disabled ? 'opacity-60 cursor-not-allowed' : ''} ${className}`}
     >
       {children}
     </button>

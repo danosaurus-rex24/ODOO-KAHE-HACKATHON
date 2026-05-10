@@ -5,7 +5,7 @@ import Card from '../components/Card'
 import { supabase } from '../supabaseClient'
 
 interface Trip {
-  id: number
+  id: string
   name: string
   destination: string
   date: string
@@ -17,8 +17,12 @@ interface Trip {
 interface TripRow {
   id?: number | string
   name?: string
+  trip_name?: string | null
   destination?: string
+  place?: string | null
   date?: string
+  start_date?: string | null
+  end_date?: string | null
   budget?: number | string | null
   spent?: number | string | null
   image?: string | null
@@ -26,7 +30,7 @@ interface TripRow {
 
 const mockTrips: Trip[] = [
   {
-    id: 1,
+    id: '1',
     name: 'Tokyo Adventure',
     destination: 'Tokyo, Japan',
     date: 'May 20 - June 5',
@@ -35,7 +39,7 @@ const mockTrips: Trip[] = [
     image: '🗻',
   },
   {
-    id: 2,
+    id: '2',
     name: 'European Tour',
     destination: 'Paris, France',
     date: 'July 10 - July 25',
@@ -44,7 +48,7 @@ const mockTrips: Trip[] = [
     image: '🗼',
   },
   {
-    id: 3,
+    id: '3',
     name: 'Beach Getaway',
     destination: 'Bali, Indonesia',
     date: 'August 1 - August 15',
@@ -60,10 +64,13 @@ const toNumber = (value: number | string | null | undefined) => {
 }
 
 const mapTripRow = (row: TripRow, index: number): Trip => ({
-  id: Number(row.id) || index + 1,
-  name: row.name || 'Untitled Trip',
-  destination: row.destination || 'Destination pending',
-  date: row.date || 'Dates pending',
+  id: String(row.id || index + 1),
+  name: row.trip_name || row.name || 'Untitled Trip',
+  destination: row.place || row.destination || 'Destination pending',
+  date:
+    row.date ||
+    [row.start_date, row.end_date].filter(Boolean).join(' - ') ||
+    'Dates pending',
   budget: toNumber(row.budget),
   spent: toNumber(row.spent),
   image: row.image || '✈️',
@@ -77,21 +84,24 @@ const Dashboard: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false)
 
   const fetchTrips = async () => {
+    console.log('Fetching trips...')
     setIsLoading(true)
 
     try {
-      const { data, error } = await supabase
-        .from('trips')
-        .select('*')
-        .order('id', { ascending: true })
+      const { data, error } = await supabase.from('trips').select('*')
+
+      console.log('Trips data:', data)
+      console.error('Trips error:', error)
 
       if (error) {
-        console.error('Failed to fetch trips:', error)
+        console.error('Error fetching trips from trips table:', error)
         setTrips(mockTrips)
         return
       }
 
-      setTrips((data || []).map((trip, index) => mapTripRow(trip, index)))
+      const nextTrips = (data || []).map((trip, index) => mapTripRow(trip, index))
+      setTrips(nextTrips)
+      console.log('Trips state updated:', nextTrips)
     } catch (error) {
       console.error('Unexpected error while fetching trips:', error)
       setTrips(mockTrips)
@@ -105,19 +115,16 @@ const Dashboard: React.FC = () => {
 
     try {
       const newTrip = {
-        name: 'New Demo Trip',
-        destination: 'Goa, India',
-        date: 'September 12 - September 16',
-        budget: 1800,
-        spent: 0,
-        image: '✈️',
+        trip_name: 'Demo Trip',
+        place: 'Test City',
       }
 
       const { data, error } = await supabase
         .from('trips')
-        .insert(newTrip)
+        .insert([newTrip])
         .select()
-        .single()
+
+      console.log('Insert result:', data, error)
 
       if (error) {
         console.error('Failed to create trip:', error)
@@ -125,11 +132,15 @@ const Dashboard: React.FC = () => {
         return
       }
 
-      if (data) {
-        setTrips((currentTrips) => [
-          ...currentTrips,
-          mapTripRow(data, currentTrips.length),
-        ])
+      if (data && data.length > 0) {
+        setTrips((currentTrips) => {
+          const insertedTrips = data.map((trip, index) =>
+            mapTripRow(trip, currentTrips.length + index)
+          )
+          const nextTrips = [...currentTrips, ...insertedTrips]
+          console.log('Trips state after insert:', nextTrips)
+          return nextTrips
+        })
       } else {
         await fetchTrips()
       }
@@ -221,9 +232,9 @@ const Dashboard: React.FC = () => {
 
         {isLoading ? (
           <Card className="flex min-h-48 items-center justify-center text-center">
-            <p className="text-lg font-semibold text-primary dark:text-white">
+            <div className="animate-pulse text-gray-400 text-lg font-semibold">
               Loading trips...
-            </p>
+            </div>
           </Card>
         ) : trips.length === 0 ? (
           <Card className="flex min-h-48 items-center justify-center text-center">
