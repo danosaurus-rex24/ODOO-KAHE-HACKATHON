@@ -12,11 +12,17 @@ function MyTrips() {
 
   const fetchTrips = async () => {
     const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      setTrips([])
+      return
+    }
+    
     const { data, error } = await supabase
       .from('trips')
       .select('*')
       .eq('user_id', user.id)
-    if (error) alert(error.message)
+    if (error) console.log(error)
     else setTrips(data)
   }
 
@@ -44,8 +50,7 @@ function MyTrips() {
           <p className="text-gray-500 text-center mt-10">No trips yet. Plan one!</p>
         ) : (
           trips.map(trip => (
-            <div key={trip.id}
-              className="bg-white rounded-lg shadow p-4 mb-4">
+            <div key={trip.id} className="bg-white rounded-lg shadow p-4 mb-4">
               <h3 className="text-lg font-semibold">{trip.trip_name}</h3>
               <p className="text-gray-500">{trip.place}</p>
               <p className="text-sm text-gray-400">{trip.start_date} → {trip.end_date}</p>
