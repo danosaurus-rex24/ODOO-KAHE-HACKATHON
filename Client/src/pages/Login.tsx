@@ -1,7 +1,11 @@
 import React from 'react'
 import Card from '../components/Card'
 import Button from '../components/Button'
-
+js
+const { error } = await supabase.auth.signInWithPassword({
+  email,
+  password
+})
 const Login: React.FC = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-primary flex items-center justify-center p-4">

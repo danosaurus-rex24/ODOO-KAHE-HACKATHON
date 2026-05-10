@@ -1,6 +1,13 @@
 import React from 'react'
 import Card from '../components/Card'
 import Button from '../components/Button'
+js
+import { supabase } from '../supabaseClient'
+
+const { error } = await supabase.auth.signUp({
+  email: form.email,
+  password: form.password
+})
 
 const Signup: React.FC = () => {
   return (
