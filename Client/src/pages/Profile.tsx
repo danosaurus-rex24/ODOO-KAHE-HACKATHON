@@ -2,7 +2,8 @@ import React from 'react'
 import Card from '../components/Card'
 import Button from '../components/Button'
 import { User, Mail, Phone, MapPin, Settings, LogOut } from 'lucide-react'
-
+js
+const { data: { user } } = await supabase.auth.getUser()
 const Profile: React.FC = () => {
   return (
     <div className="space-y-6 max-w-2xl">
