@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Calendar, DollarSign, MapIcon, MapPin, TrendingUp } from 'lucide-react'
 import Button from '../components/Button'
 import Card from '../components/Card'
+import { supabase } from '../supabaseClient'
 
 interface Trip {
   id: number
@@ -13,42 +14,144 @@ interface Trip {
   image: string
 }
 
+interface TripRow {
+  id?: number | string
+  name?: string
+  destination?: string
+  date?: string
+  budget?: number | string | null
+  spent?: number | string | null
+  image?: string | null
+}
+
+const mockTrips: Trip[] = [
+  {
+    id: 1,
+    name: 'Tokyo Adventure',
+    destination: 'Tokyo, Japan',
+    date: 'May 20 - June 5',
+    budget: 3000,
+    spent: 1850,
+    image: '🗻',
+  },
+  {
+    id: 2,
+    name: 'European Tour',
+    destination: 'Paris, France',
+    date: 'July 10 - July 25',
+    budget: 4500,
+    spent: 2100,
+    image: '🗼',
+  },
+  {
+    id: 3,
+    name: 'Beach Getaway',
+    destination: 'Bali, Indonesia',
+    date: 'August 1 - August 15',
+    budget: 2500,
+    spent: 500,
+    image: '🏝️',
+  },
+]
+
+const toNumber = (value: number | string | null | undefined) => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+const mapTripRow = (row: TripRow, index: number): Trip => ({
+  id: Number(row.id) || index + 1,
+  name: row.name || 'Untitled Trip',
+  destination: row.destination || 'Destination pending',
+  date: row.date || 'Dates pending',
+  budget: toNumber(row.budget),
+  spent: toNumber(row.spent),
+  image: row.image || '✈️',
+})
+
 const Dashboard: React.FC = () => {
   console.log('Dashboard rendering')
 
-  const trips: Trip[] = [
-    {
-      id: 1,
-      name: 'Tokyo Adventure',
-      destination: 'Tokyo, Japan',
-      date: 'May 20 - June 5',
-      budget: 3000,
-      spent: 1850,
-      image: '🗻',
-    },
-    {
-      id: 2,
-      name: 'European Tour',
-      destination: 'Paris, France',
-      date: 'July 10 - July 25',
-      budget: 4500,
-      spent: 2100,
-      image: '🗼',
-    },
-    {
-      id: 3,
-      name: 'Beach Getaway',
-      destination: 'Bali, Indonesia',
-      date: 'August 1 - August 15',
-      budget: 2500,
-      spent: 500,
-      image: '🏝️',
-    },
-  ]
+  const [trips, setTrips] = useState<Trip[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isCreating, setIsCreating] = useState(false)
+
+  const fetchTrips = async () => {
+    setIsLoading(true)
+
+    try {
+      const { data, error } = await supabase
+        .from('trips')
+        .select('*')
+        .order('id', { ascending: true })
+
+      if (error) {
+        console.error('Failed to fetch trips:', error)
+        setTrips(mockTrips)
+        return
+      }
+
+      setTrips((data || []).map((trip, index) => mapTripRow(trip, index)))
+    } catch (error) {
+      console.error('Unexpected error while fetching trips:', error)
+      setTrips(mockTrips)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleCreateTrip = async () => {
+    setIsCreating(true)
+
+    try {
+      const newTrip = {
+        name: 'New Demo Trip',
+        destination: 'Goa, India',
+        date: 'September 12 - September 16',
+        budget: 1800,
+        spent: 0,
+        image: '✈️',
+      }
+
+      const { data, error } = await supabase
+        .from('trips')
+        .insert(newTrip)
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Failed to create trip:', error)
+        alert('Could not create trip. Please try again.')
+        return
+      }
+
+      if (data) {
+        setTrips((currentTrips) => [
+          ...currentTrips,
+          mapTripRow(data, currentTrips.length),
+        ])
+      } else {
+        await fetchTrips()
+      }
+
+      alert('Trip created successfully!')
+    } catch (error) {
+      console.error('Unexpected error while creating trip:', error)
+      alert('Could not create trip. Please try again.')
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
+  useEffect(() => {
+    void fetchTrips()
+  }, [])
 
   const totalBudget = trips.reduce((sum, trip) => sum + trip.budget, 0)
   const totalSpent = trips.reduce((sum, trip) => sum + trip.spent, 0)
   const remainingBudget = totalBudget - totalSpent
+  const remainingPercent =
+    totalBudget > 0 ? Math.round((remainingBudget / totalBudget) * 100) : 0
 
   return (
     <div className="space-y-6">
@@ -106,9 +209,9 @@ const Dashboard: React.FC = () => {
         <Card className="flex items-center justify-center">
           <Button
             className="transition hover:opacity-90"
-            onClick={() => alert('Trip created successfully!')}
+            onClick={handleCreateTrip}
           >
-            Create Trip
+            {isCreating ? 'Creating...' : 'Create Trip'}
           </Button>
         </Card>
       </div>
@@ -116,7 +219,13 @@ const Dashboard: React.FC = () => {
       <section className="space-y-4">
         <h3 className="text-2xl font-bold text-primary dark:text-white">Your Trips</h3>
 
-        {trips.length === 0 ? (
+        {isLoading ? (
+          <Card className="flex min-h-48 items-center justify-center text-center">
+            <p className="text-lg font-semibold text-primary dark:text-white">
+              Loading trips...
+            </p>
+          </Card>
+        ) : trips.length === 0 ? (
           <Card className="flex min-h-48 items-center justify-center text-center">
             <p className="text-lg font-semibold text-primary dark:text-white">
               No trips yet. Start planning your journey ✈️
@@ -152,14 +261,14 @@ const Dashboard: React.FC = () => {
                         Budget Usage
                       </span>
                       <span className="text-sm font-semibold text-accent">
-                        {Math.round((trip.spent / trip.budget) * 100)}%
+                        {trip.budget > 0 ? Math.round((trip.spent / trip.budget) * 100) : 0}%
                       </span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-light dark:bg-secondary">
                       <div
                         className="h-2 rounded-full bg-accent transition-all duration-500"
                         style={{
-                          width: `${(trip.spent / trip.budget) * 100}%`,
+                          width: `${trip.budget > 0 ? (trip.spent / trip.budget) * 100 : 0}%`,
                         }}
                       />
                     </div>
@@ -194,9 +303,7 @@ const Dashboard: React.FC = () => {
 
           <div className="md:text-right">
             <p className="text-sm opacity-80">of ${totalBudget} total</p>
-            <p className="mt-1 text-lg font-semibold">
-              {Math.round((remainingBudget / totalBudget) * 100)}% left
-            </p>
+            <p className="mt-1 text-lg font-semibold">{remainingPercent}% left</p>
           </div>
         </div>
       </Card>
