@@ -1,9 +1,21 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Card from '../components/Card'
 import Button from '../components/Button'
 import { User, Mail, Phone, MapPin, Settings, LogOut } from 'lucide-react'
+import { supabase } from '../supabaseClient'
 
 const Profile: React.FC = () => {
+  const [updatedName, setUpdatedName] = useState('John Doe')
+  const [isSaving, setIsSaving] = useState(false)
+
+  const handleUpdateProfile = () => {
+    setIsSaving(true)
+    setTimeout(() => {
+      alert('Profile updated successfully!');
+      setIsSaving(false);
+    }, 500);
+  }
+
   return (
     <div className="space-y-6 max-w-2xl">
       {/* Profile Header */}
@@ -13,7 +25,7 @@ const Profile: React.FC = () => {
             👤
           </div>
           <div>
-            <h1 className="text-3xl font-bold">John Doe</h1>
+            <h1 className="text-3xl font-bold">{updatedName}</h1>
             <p className="text-gray-100 mt-2">Premium Member</p>
           </div>
         </div>
@@ -33,7 +45,8 @@ const Profile: React.FC = () => {
             </label>
             <input
               type="text"
-              value="John Doe"
+              value={updatedName}
+              onChange={(event) => setUpdatedName(event.target.value)}
               className="w-full px-4 py-2 rounded-lg border border-light dark:border-secondary bg-gray-50 dark:bg-primary dark:text-white focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
@@ -100,19 +113,19 @@ const Profile: React.FC = () => {
         </h2>
 
         <div className="space-y-3">
-          <button className="w-full flex items-center justify-between p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-secondary transition-colors">
+          <button className="w-full flex items-center justify-between p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-secondary transition-colors" onClick={() => alert('Feature coming soon!')}>
             <span className="text-primary dark:text-white font-medium">
               Notification Preferences
             </span>
             <span className="text-accent">→</span>
           </button>
-          <button className="w-full flex items-center justify-between p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-secondary transition-colors">
+          <button className="w-full flex items-center justify-between p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-secondary transition-colors" onClick={() => alert('Feature coming soon!')}>
             <span className="text-primary dark:text-white font-medium">
               Privacy Settings
             </span>
             <span className="text-accent">→</span>
           </button>
-          <button className="w-full flex items-center justify-between p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-secondary transition-colors">
+          <button className="w-full flex items-center justify-between p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-secondary transition-colors" onClick={() => alert('Feature coming soon!')}>
             <span className="text-primary dark:text-white font-medium">
               Account Security
             </span>
@@ -123,10 +136,15 @@ const Profile: React.FC = () => {
 
       {/* Actions */}
       <div className="flex gap-4">
-        <Button variant="secondary" className="flex-1">
-          Update Profile
+        <Button
+          variant="secondary"
+          className="flex-1"
+          onClick={handleUpdateProfile}
+          disabled={isSaving}
+        >
+          {isSaving ? 'Updating...' : 'Update Profile'}
         </Button>
-        <Button variant="outline" className="flex-1 flex items-center justify-center gap-2">
+        <Button variant="outline" className="flex-1 flex items-center justify-center gap-2" onClick={() => alert('Logout feature coming soon!')}>
           <LogOut size={18} />
           Logout
         </Button>

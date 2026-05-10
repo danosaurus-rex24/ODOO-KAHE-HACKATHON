@@ -1,8 +1,46 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Card from '../components/Card'
 import Button from '../components/Button'
+import { supabase } from '../supabaseClient'
 
 const Signup: React.FC = () => {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleSignup = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setIsLoading(true)
+
+    try {
+      console.log('Signing up...', { email, name })
+
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { name },
+        },
+      })
+
+      console.log('Signup result:', data, error)
+
+      if (error) {
+        console.error('Signup error:', error)
+        alert('Signup failed')
+        return
+      }
+
+      alert('Saved successfully')
+    } catch (error) {
+      console.error('Unexpected signup error:', error)
+      alert('Signup failed')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white dark:bg-primary flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -15,7 +53,7 @@ const Signup: React.FC = () => {
           </p>
         </div>
 
-        <form className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSignup}>
           <div>
             <label className="block text-sm font-medium text-primary dark:text-white mb-2">
               Full Name
@@ -23,6 +61,8 @@ const Signup: React.FC = () => {
             <input
               type="text"
               placeholder="John Doe"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
               className="w-full px-4 py-2 rounded-lg border border-light dark:border-secondary bg-gray-50 dark:bg-primary dark:text-white focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
@@ -34,6 +74,8 @@ const Signup: React.FC = () => {
             <input
               type="email"
               placeholder="your@email.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
               className="w-full px-4 py-2 rounded-lg border border-light dark:border-secondary bg-gray-50 dark:bg-primary dark:text-white focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
@@ -45,11 +87,15 @@ const Signup: React.FC = () => {
             <input
               type="password"
               placeholder="••••••••"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
               className="w-full px-4 py-2 rounded-lg border border-light dark:border-secondary bg-gray-50 dark:bg-primary dark:text-white focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
 
-          <Button className="w-full">Create Account</Button>
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? 'Creating...' : 'Create Account'}
+          </Button>
 
           <p className="text-center text-gray-600 dark:text-gray-400 text-sm">
             Already have an account?{' '}
